@@ -6,19 +6,45 @@ import java.util.Scanner;
 
 public class TicTacToe {
 
-    static ArrayList<Integer> playerPositions = new ArrayList<Integer>();
-    static ArrayList<Integer> cpuPositions = new ArrayList<Integer>();
-    public static void main(String[] args){
+    static ArrayList<Integer> playerPositions = new ArrayList<Integer>(0);
+    static ArrayList<Integer> cpuPositions = new ArrayList<Integer>(0);
 
-        char[][] gameBoard = {{' ', '|', ' ', '|', ' '},
+    static List topRow = Arrays.asList(1, 2, 3);
+    static List midRow = Arrays.asList(4, 5, 6);
+    static List botRow = Arrays.asList(7, 8, 9);
+
+    static List leftCol = Arrays.asList(1, 4, 7);
+    static List midCol = Arrays.asList(2, 5, 8);
+    static List rightCol = Arrays.asList(3, 6, 9);
+
+    static List diag1 = Arrays.asList(1, 5, 9);
+    static List diag2 = Arrays.asList(3, 5, 7);
+
+    static char[][] gameBoard = {{' ', '|', ' ', '|', ' '},
                                 {'-', '+', '-', '+', '-'},
                                 {' ', '|', ' ', '|', ' '},
                                 {'-', '+', '-', '+', '-'},
                                 {' ', '|', ' ', '|', ' '}};
 
+    static List<List> winConditions = new ArrayList<List>();
+
+    static int winCount = 0;
+    static int cpuWinCount = 0;
+    static int tieCount = 0;
+    public static void main(String[] args){
+
+        winConditions.add(topRow);
+        winConditions.add(midRow);
+        winConditions.add(botRow);
+        winConditions.add(leftCol);
+        winConditions.add(midCol);
+        winConditions.add(rightCol);
+        winConditions.add(diag1);
+        winConditions.add(diag2);
+
         printGameBoard(gameBoard);
         playGame(gameBoard);
-
+        System.out.println();
     }
 
     /*
@@ -37,44 +63,55 @@ public class TicTacToe {
         }
     }
 
+    /* This method is where the user inputs the position
+        of where they want to place their piece.
+        Handled by while loop and calling other
+        helper methods to check validity of state of game.
+
+    */
     public static void playGame(char[][] gameBoard){
 
         int playerPos;
         int cpuPos;
         Random rand = new Random();
+        Scanner scan = new Scanner(System.in);
+        String again = "";
 
         System.out.println("Enter a position on the board 1-9");
 
 
-        while (checkWinner().equals("")){
+        while (!checkWinner()){
 
-            Scanner scan = new Scanner(System.in);
             playerPos = scan.nextInt();
             while (!checkPosition(playerPos)){
-                System.out.println("Position occupied! Try another number");
+                System.out.println("Invalid position! Try another number \n");
                 playerPos = scan.nextInt();
             }
             placePiece(playerPos, gameBoard, "player");
-
-            if (!checkWinner().equals("You win!")){
-
+           
+            if(playerPositions.size() + cpuPositions.size() < 9){
                 cpuPos = rand.nextInt(9) + 1;
-
                 while (!checkPosition(cpuPos)){
+
                     cpuPos = rand.nextInt(9) + 1;
                 }
-            
-            placePiece(cpuPos, gameBoard, "cpu");
+
+                placePiece(cpuPos, gameBoard, "cpu");
             }
 
             printGameBoard(gameBoard);
             System.out.println();
         }
+        
+        System.out.println("You've won " + winCount + " times, lost to the CPU " + cpuWinCount + " times, and tied " + tieCount + " times!");
+        System.out.println("Play again? (Y/N)");
+        again = scan.next();
+        playAgain(again);
     }
 
     public static boolean checkPosition(int position){
 
-        if (playerPositions.contains(position) || cpuPositions.contains(position)){
+        if ((playerPositions.contains(position) || cpuPositions.contains(position)) || ((position < 1) || (position > 9))){
             
             return false;
         }
@@ -145,51 +182,68 @@ public class TicTacToe {
         }
     }
 
-    public static String checkWinner(){
+    public static boolean checkWinner(){
 
-        String winStatement = "";
-        
-        List topRow = Arrays.asList(1, 2, 3);
-        List midRow = Arrays.asList(4, 5, 6);
-        List botRow = Arrays.asList(7, 8, 9);
-
-        List leftCol = Arrays.asList(1, 4, 7);
-        List midCol = Arrays.asList(2, 5, 8);
-        List rightCol = Arrays.asList(3, 6, 9);
-
-        List diag1 = Arrays.asList(1, 5, 9);
-        List diag2 = Arrays.asList(3, 5, 7);
-        
-        List<List> winConditions = new ArrayList<List>();
-
-        winConditions.add(topRow);
-        winConditions.add(midRow);
-        winConditions.add(botRow);
-        winConditions.add(leftCol);
-        winConditions.add(midCol);
-        winConditions.add(rightCol);
-        winConditions.add(diag1);
-        winConditions.add(diag2);
+        String winStatement;
 
         for(List l : winConditions){
 
             if (playerPositions.containsAll(l)){
                 
                 winStatement = "You win!";
+                winCount++;
                 System.out.println(winStatement);
+                
+                return true;
             }
             else if (cpuPositions.containsAll(l)){
 
                 winStatement = "CPU wins!";
+                cpuWinCount++;
                 System.out.println(winStatement);
+
+                return true;
             }
-            else if (playerPositions.size() + cpuPositions.size() == 9){
+            else if (playerPositions.size() + cpuPositions.size() == 9 && !playerPositions.containsAll(l) && !cpuPositions.containsAll(l)){
 
                 winStatement = "Tie game!";
+                tieCount++;
                 System.out.println(winStatement);
+
+                return true;
             }
         }
-        
-        return winStatement;
+
+        return false;
+    }
+
+    /* Resets the game board to empty spaces where pieces
+        were played in the previous game.
+        Also resets the array list for the player and cpu positions.
+        Redirects back to playGame() method
+
+        if option is No, do nothing (code exit?)
+    */
+    public static void playAgain(String a){
+
+        if (a.equals("Y")){
+
+            for (int i = 0; i < gameBoard.length; i++){
+                for (int j = 0; j < gameBoard[i].length; j++){
+
+                    if (gameBoard[i][j] == 'X' || gameBoard[i][j] == 'O'){
+                        gameBoard[i][j] = ' ';
+                    }
+                }
+            }
+
+            playerPositions.clear();
+            cpuPositions.clear();
+
+            printGameBoard(gameBoard);
+            playGame(gameBoard);
+        }
+        else if (a.equals("N")){
+        }
     }
 }
